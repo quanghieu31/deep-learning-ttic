@@ -10,7 +10,6 @@
 \begin{document}
 
 \title{Core EDF code}
-
 \maketitle
 
 \section{Code breakdown}
@@ -43,7 +42,7 @@ def Backward(loss):
 
 \textbf{Components:}
 \begin{itemize}
-    \item \texttt{loss}: This argument represents the loss node, which quantifies the difference between the predicted output and the true labels.
+    \item \texttt{loss}: This given argument represents the loss node, which quantifies the difference between the predicted output and the true labels.
     \item \texttt{c.grad = 0}: This initializes the gradient of each computed node and parameter to zero. This is important because gradients accumulate over multiple backward passes, so they must be reset for each new pass.
     \item \texttt{loss.grad = 1.}: This sets the gradient of the loss to 1, which is the starting point for backpropagation. It signifies that we want to compute how changes in the loss affect the parameters of the model.
     \item \texttt{c.backward()}: This calls the backward method for each computed node in reverse order (from output to input) to compute gradients. The gradients will be propagated backward through the network to update the parameters.
@@ -155,10 +154,177 @@ In this way, the model parameters are updated using the average gradients, leadi
 
 \section{Class Input}
 
+\textbf{RMB}\\
+- no need to initialize, why? is this because inputs are different across the layers? input layer has the input nodes, then computed nodes at this layer become the input nodes for the next layer\\
+- in other words, this class might just represent a placeholder for inputs (i.e. raw data) in the computation graph. No need to store a value directly in this class, because the input values may be assigned dynamically when the forward pass is run. Each layer passes its outputs forward, becoming the inputs for the next layer. \\
+- not care about the $x.grad$ so pass. because backprop only updates weights (parameters), not the input data itself. 
+\begin{verbatim}
+class Input:
+    def __init__(self):
+        pass # ?
+    def addgrad(self, delta):
+        pass # ?
+\end{verbatim}
+
 \section{Class CompNode}
+
+\textbf{REMEMBER}: \\
+- there is initially a global CompNodes list. after computing of F or G or H, these nodes are in here iteratively for access during forward and backward passes \\
+- what is delta? the gradient of the loss with respect to this node's output or computed node (i.e. $\frac{\partial loss}{\partial (y, z, \text{ or } u)}$). The gradient is passed backward through the network from the output towards the input. This delta is used to update the gradient stored in the instances of self.grad (self can be y, z, or u.\\
+- Initialization is handled by the subclass? the initialization process is unique to each subclass and is performed at the time the subclass is instantiated. This means subclasses like F, G, and H are responsible for creating/computing the computed nodes and this is dynamically depends on the functions used and different layers which have different inputs/previous outputs and different parameters used to compute)\\
+These subclasses are responsible for defining the structure of their respective operations, including how they:
+\begin{itemize}
+    \item Store the input (previous layer's output).
+    \item Set up the params (like \verb|p| for a layer's weights).
+    \item Define how the forward pass computes outputs/nodes based on the inputs and parameters.
+    \item Define how the backward pass calculates the grads for those inputs and parameters.
+\end{itemize}
+ 
+\begin{verbatim}
+class CompNode: # initialization is handled by the subclass (?)
+    def addgrad(self, delta):
+        self.grad += delta # what is delta?
+\end{verbatim}
 
 \section{Class Parameter}
 
+\textbf{RMB}\\
+- There exists up front a global list of parameters call Parameters (note the "s"), which is different from an instance of Parameter (no "s") \\
+- Parameter does not have batch index, so self.grad or p.grad of each layer across all batch indices are getting summed up and then each layer has a sum number divided by batch size => average over the batch\\
+- What is nBatch? Batch size?\\
+- Delta is the change needed given the loss wrt the parameter at this particular layer
+\begin{verbatim}
+class Parameter:
+    def __init__(self, value):
+        Parameters.append(self)
+        # set the very first value for the parameter
+        self.value = value 
+    def addgrad(self, delta):
+        # sum over the minibatch
+        self.grad += np.sum(delta, axis=0) / (nBatch)
+\end{verbatim}
+\textbf{Parameter updating}:
+\begin{itemize}
+    \item \textbf{Standard practice}: In most training algorithms, the parameters are updated IMMEDIATELY after processing each batch. This means that after each batch, the current set of averaged gradients is used to update the parameters, and the parameters are adjusted right after processing the batch. This approach is called \textbf{mini-batch gradient descent}.
+    \item \textbf{Gradient accumulation} (less common): In some variations, we might want to accumulate gradients over multiple batches and only update the parameters once after processing all 10 batches. In that case, we sum the gradients from each batch and average them across all batches.
+\end{itemize}
+ 
+
 \section{class F(CompNode)}
+
+\textbf{REMEMBER}: \\
+- In order to compute each object $y$ or $F$, we need to do the `foward()` function AND the class "stores/remembers/integrates" $x.value$ and $p.value$ in order to do derivative later during backward\\
+- the initialization of the CompNode happens in the subclasses $F$, $G$, and $H$.
+\begin{verbatim}
+# FIRST, this is where y.value and y.grad is created
+y = F(p,x)
+class F(CompNode): # inherite everything that belongs to CompNode class
+    def __init__(self, p, x):
+        CompNodes.append(self) # because F is a computed node too (prediction y)
+        # 2 things that make F:
+        self.x = x # input instance
+        self.p = p # param instance
+    def forward(self): # specific to $y$
+        self.value = <<get y.value>> 
+        # i.e. depends on some function F given x and p
+    def backward(self):
+    # assume the gradient loss given y is set
+        self.x.addgrad(<< get the y.grad >> ) 
+        # i.e. since x instance (class Input) has a addgrad method
+        self.p.addgrad(<< get y.grad >>) 
+        # i.e. same like x above
+\end{verbatim}
+\section{MLP example}
+
+Notes:\\
+- Affine? Affine is like weighted sum (z = Wx + b), which is often followed by a non-linear activation function
+
+Suppose we have a 1-hidden-layer network. From input layer to the hidden layer, we compute the output of the hidden layer using $L1=Sigmoid(Affine(Phi1, x)$ in which $Phi1$ is the parameters for this computation and $x$ is original input. Now, from this hidden layer to the output layer, we compute the nodes in this output layer with $Q=Softmax(Sigmoid(Affine(Phi2, L1))$ in which $Phi2$ is the parameters for this computation and $L1$ is the input which is the output of hidden layer. This is to get the probabilities over the labels. Finally, calculate the log loss $ell = LogLoss(Q,y)$. Done with the FeedForward.\\
+
+- here, $x$ and $y$ are "input"/already specified nodes whose values are set. 
+- $Phi1$, $Phi2$ are "param packages" (a matrix and a bias vector in this case). We have computation node \textbf{classes} (generic like $F$, $G$, $H$ and inherited from CompNode class) specifically in this case which are $Affine, Sigmoid, LogLoss$ each of which has a forward and a backward method.
+
+\subsection{Sigmoid class}
+
+$$y[b, i] = \sigma(z[b,i]) = \sigma(Affine(Phi1, x)$$
+$$y = \frac{1}{1+e^{-z}}, \frac{dy}{dx}=\frac{e^{-z}}{(1+e^{-z})^2}=y(1-y)$$
+code for updating the gradients of input $x$ in this case:
+$$z.grad[b,i] = z.grad[b,i] + y.grad[b,i]\cdot y.value[b,i]\cdot(1-y.value[b,i])$$
+At batch $b$ and at a given layer, $i$ represents the index for which vector element it is, $\frac{\partial loss}{\partial z_{i}} += \frac{\partial loss}{\partial y_{i}} \cdot y_{i} \cdot (1-y_{i})$, then update the the p.grad later with this z.grad
+
+\textbf{Ponder}:\\
+- essentially the Sigmoid class is like F, G, H, but why not inheritated from class CompNode? it's different from F? Since likely that the Sigmoid class is a H subclass.
+\begin{verbatim}
+class Sigmoid: 
+    def __init__(self, x):
+        # self is the output or computed nodes
+        CompNodes.append(self)
+        self.x = x 
+        # affined value (more accurately, z) and this is vector or tensor
+    def forward(self):
+        self.value = 1 / (1 + np.exp(-self.x.value))
+        # apply exp to each of the elements in the tensor/vector or broadcasting
+    def backward(self):
+        self.x.addgrad(self.grad * self.value * (1-self.value)
+\end{verbatim}
+\subsection{Affine class}
+
+$$y[b,j] = \sum_{i} W[i,j]\cdot x[b,i] = xW - B$$
+But updating gradients?
+
+Suppose Phi is consisted of W and b
+
+\begin{verbatim}
+class Affine(CompNode):
+    def __init__(self, Phi, x):
+        CompNodes.append(self) # always
+        # self here is the weighted sum or z
+        self.x = x
+        self.Phi = Phi
+    def forward(self):
+        # again, self.value is weighted sum or z
+        self.value = np.matmul(self.x.value, self.Phi.w.value) - self.Phi.b.value
+    def backward(self):
+        # x.addgrad here simply means x is a computed node and
+        # (self.grad += delta is from the CompNode class)
+        self.x.addgrad(np.matmul(self.grad, # dL/dz
+                                self.Phi.w.value.T) # dL/dW
+        # so the x.grad is dL/dx
+        # delta is dL/dz * dz/dx = dL/dz * W.T
+        # because z = Wx - B
+        
+        self.Phi.b.addgrad(-self.grad) # -dL/dz because
+        # delta is dL/db = dL/dz * dz/db = dL/dz * (-1)
+        
+        self.Phi.w.addgrad(
+                    self.x.value[:, :, np.newaxis] 
+                    *
+                    self.grad[:, np.newaxis, :]
+                    )
+        # so, Phi.w.grad is dL/dW
+        # delta is dL/dz * dz/dW = x.T * dL/dz 
+        # because z = Wx - B
+\end{verbatim}
+
+Note: new axes \verb|np.newaxis| are added to align the dimensions of $x$ and $\frac{dL}{dz}$ for proper broadcasting to perform the outer product. 
+
+\subsection{Recursive}
+Given a list of parameters or a list of Affine transformation/function params
+\begin{verbatim}
+def MLP(Phi, x):
+    if len(Phi)=0:
+        return x
+    else:
+        input_to_current_layer = MLP(Phi[1:], x)
+        linear_output_z = Affine(Phi[0], something) 
+        return Sigmoid(linear_output_z)
+\end{verbatim}
+Step 1: The recursive call \verb|MLP(Phi[1:], x)| processes the remaining layers, starting from the second element in the list \verb|Phi|. It essentially keeps working through the deeper layers of the network.
+
+Step 2: The \verb|Affine(Phi[0], input_to_current_layer)| applies an affine transformation to the result from the recursive call. Here, \verb|Phi[0]| represents the parameters (weights and biases) for the current layer. This affine transformation computes \verb|linear_output_z = input_to_current_layer × W - B|, where \verb|W| is the weight matrix and \verb|B| is the bias vector.
+
+Step 3: The \verb|Sigmoid(linear_output_z)| applies the sigmoid activation function to the output \verb|linear_output_z|, adding non-linearity to the network, which allows the model to capture more complex patterns in the data.
+
+ 
 
 \end{document}
