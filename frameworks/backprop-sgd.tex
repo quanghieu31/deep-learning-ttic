@@ -5,7 +5,7 @@
 \begin{document}
 
 \begin{enumerate}
-    \item \textbf{Stochastic Gradient Descent (SGD)}:
+    \item \textbf{Stochastic Gradient Descent (SGD)} for each training example or (x,y) pair:
     \begin{itemize}
         \item Suppose we have 2 hidden layers. For each training example, we perform a forward pass, calculate the loss, and backpropagate to compute the gradients for the weights, such as:
         \[
@@ -15,21 +15,24 @@
         \[
         W_1 = W_1 - \eta \frac{\partial \text{Loss}}{\partial W_1}, \quad W_2 = W_2 - \eta \frac{\partial \text{Loss}}{\partial W_2}, \quad W_3 = W_3 - \eta \frac{\partial \text{Loss}}{\partial W_3}
         \]
-        \item This method updates frequently, but it could introduce instability due to noisy data.
+        \item This method updates frequently, but it could introduce instability and maybe overfitting due to the continuous updating (?)
     \end{itemize}
 
-    \item \textbf{Batch Learning}:
+    \item \textbf{SGD but Batch Learning}:
     \begin{itemize}
-        \item In contrast, batch learning waits until the entire batch (or mini-batch) has been processed. After the forward pass, we compute the average gradients for each weight over the entire batch:
+        \item In contrast, batch learning waits until the entire batch (or minibatching) is processed. After the forward pass, we compute the average gradients for each weight over the entire batch, for example, the first layer would have the average gradient loss wrt W1:
         \[
         \frac{1}{N} \sum_{i=1}^{N} \frac{\partial \text{Loss}_i}{\partial W_1}
         \]
-        \item After averaging the gradients, we update the weights as follows:
+        \item After averaging the gradients, we update the weights, for example, for hidden layer 1 and weight 1 as follows:
         \[
         W_1 = W_1 - \eta \cdot \frac{1}{N} \sum_{i=1}^{N} \frac{\partial \text{Loss}_i}{\partial W_1}
         \]
-        \item This approach provides a more stable update, though it requires waiting for the entire batch to be processed before making updates.
+This requires waiting for the entire batch (or minibatches) to be processed before making the updates.
     \end{itemize}
+
+Which one is more reasonable? Why?
+
 \end{enumerate}
 
 \end{document}
