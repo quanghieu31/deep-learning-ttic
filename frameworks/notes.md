@@ -2,9 +2,9 @@
 - **Initialize random weights** (no bias assumed).
 - Perform a **forward pass** for one training example through the network (2 hidden layers).
 - Compute the loss and **backpropagate** to calculate gradients for each layer’s weights:  
-  $$ \left[ \frac{\partial \text{Loss}}{\partial W_1}, \frac{\partial \text{Loss}}{\partial W_2}, \frac{\partial \text{Loss}}{\partial W_3} \right] $$
+  $$\left[ \frac{\partial \text{Loss}}{\partial W_1}, \frac{\partial \text{Loss}}{\partial W_2}, \frac{\partial \text{Loss}}{\partial W_3} \right]$$
 - **Update the weights** using **Stochastic Gradient Descent (SGD)**:  
-  $$ W_1 = W_1 - \eta \frac{\partial \text{Loss}}{\partial W_1}, \quad W_2 = W_2 - \eta \frac{\partial \text{Loss}}{\partial W_2}, \quad W_3 = W_3 - \eta \frac{\partial \text{Loss}}{\partial W_3} $$
+  $$W_1 = W_1 - \eta \frac{\partial \text{Loss}}{\partial W_1}, \quad W_2 = W_2 - \eta \frac{\partial \text{Loss}}{\partial W_2}, \quad W_3 = W_3 - \eta \frac{\partial \text{Loss}}{\partial W_3}$$
 - Repeat this for the next training example, using the updated weights from the previous example.
 - After one pass through all training examples (one **epoch**), we end up with updated weights.
 - Typically, **multiple epochs** are run to optimize the weights.
@@ -41,12 +41,12 @@ Now, the blog post introduces **batch learning** as an alternative to SGD, so le
    2. **Backpropagation:** 
       After processing the entire batch (or mini-batch), we compute the **average gradient** for each layer over all examples in the batch.  
       If there are $N$ examples in a batch, the average gradient for a layer $W_1$ would be:  
-      $$ \frac{1}{N} \sum_{i=1}^{N} \frac{\partial \text{Loss}_i}{\partial W_1} $$
+      $$\frac{1}{N} \sum_{i=1}^{N} \frac{\partial \text{Loss}_i}{\partial W_1}$$
       where $\frac{\partial \text{Loss}_i}{\partial W_1}$ is the gradient for the $i$-th example in the batch.
 
    3. **Weight Update:**
       After averaging the gradients over the batch, we update the weights:  
-      $$ W_1 = W_1 - \eta \cdot \frac{1}{N} \sum_{i=1}^{N} \frac{\partial \text{Loss}_i}{\partial W_1} $$
+      $$W_1 = W_1 - \eta \cdot \frac{1}{N} \sum_{i=1}^{N} \frac{\partial \text{Loss}_i}{\partial W_1}$$
       So, instead of using the gradient from a single example, we use the **averaged gradient** over the whole batch. This can make training more stable, but each update is slower since we’re waiting for a full batch before updating.
 
 ---
