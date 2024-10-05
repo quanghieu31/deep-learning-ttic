@@ -1,0 +1,35 @@
+\documentclass{letter}
+\usepackage{amsmath}
+\usepackage[a4paper, margin=1in]{geometry}
+
+\begin{document}
+
+\begin{enumerate}
+    \item \textbf{Stochastic Gradient Descent (SGD)}:
+    \begin{itemize}
+        \item Suppose we have 2 hidden layers. For each training example, we perform a forward pass, calculate the loss, and backpropagate to compute the gradients for the weights, such as:
+        \[
+        \frac{\partial \text{Loss}}{\partial W_1}, \frac{\partial \text{Loss}}{\partial W_2}, \frac{\partial \text{Loss}}{\partial W_3}
+        \]
+        \item We then update the weights immediately after each example:
+        \[
+        W_1 = W_1 - \eta \frac{\partial \text{Loss}}{\partial W_1}, \quad W_2 = W_2 - \eta \frac{\partial \text{Loss}}{\partial W_2}, \quad W_3 = W_3 - \eta \frac{\partial \text{Loss}}{\partial W_3}
+        \]
+        \item This method updates frequently, but it could introduce instability due to noisy data.
+    \end{itemize}
+
+    \item \textbf{Batch Learning}:
+    \begin{itemize}
+        \item In contrast, batch learning waits until the entire batch (or mini-batch) has been processed. After the forward pass, we compute the average gradients for each weight over the entire batch:
+        \[
+        \frac{1}{N} \sum_{i=1}^{N} \frac{\partial \text{Loss}_i}{\partial W_1}
+        \]
+        \item After averaging the gradients, we update the weights as follows:
+        \[
+        W_1 = W_1 - \eta \cdot \frac{1}{N} \sum_{i=1}^{N} \frac{\partial \text{Loss}_i}{\partial W_1}
+        \]
+        \item This approach provides a more stable update, though it requires waiting for the entire batch to be processed before making updates.
+    \end{itemize}
+\end{enumerate}
+
+\end{document}
