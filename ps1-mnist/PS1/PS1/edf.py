@@ -1,5 +1,3 @@
-# copy from the edf.py file in zip folder
-
 import numpy as np
 
 DT=np.float32
@@ -21,9 +19,7 @@ def Forward():
 def Backward(loss):
     for c in CompNodes + Parameters:
         c.grad = np.zeros(c.value.shape, dtype = DT)
-
     loss.grad = np.ones(loss.value.shape)/len(loss.value)  #The convention is to compute the averaage gradient over the batch
-
     for c in CompNodes[::-1]:
         c.backward();
 
@@ -63,36 +59,18 @@ class CompNode:
 ############### Parameter Packages and some Compnodes ###########################
 
 class ParameterPackage:
-    pass 
-    
+    # pass (commented October 5)
+    def __init__(self):
+        pass
 
+    
 class AffineParams(ParameterPackage):
     def __init__(self,nInputs,nOutputs):
-        X = Xavier(nInputs) # initialized weights/params
-
-        # NOTE: these below are instances of Parameters class so they have
-
-        # generates random values uniformly distributed between -X and X for 
-        # the weight matrix w. shape (nInputs, nOutputs), with controlled variance
-        self.w = Parameter(np.random.uniform(-X, X, (nInputs, nOutputs)))
-
-        # zeros with dimensions like the next layer
-        self.b = Parameter(np.zeros(nOutputs)) 
-
+        X = Xavier(nInputs)
+        self.w = Parameter(np.random.uniform(-X,X,(nInputs,nOutputs)))
+        self.b = Parameter(np.zeros(nOutputs))
 
 def Xavier(nInputs):
-    """
-    initialize the weights of the nn (beginning parameters)
-    which help with the training stability
-    ensures the variance of the weights in a layer is not too large or too small
-    
-    function takes the number of inputs (nInputs) to a layer
-        returns a scaling factor based on the square root of 3.0 / nInputs. 
-     
-    This scaling factor ensures that the weights are initialized with values that 
-        have a controlled range, which avoids making the activations and gradients
-        too large or too small at the start of training.
-    """
     return np.sqrt(3.0/nInputs)
 
 class Affine(CompNode):
