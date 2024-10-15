@@ -1,0 +1,133 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage[a4paper, margin=1in]{geometry}
+
+\begin{document}
+
+\title{Query-Key-Value Mechanism in Transformers}
+\author{}
+\date{}
+\maketitle
+
+\section*{Example Sentence}
+\textbf{Sentence:} ``The cat sat on the mat.''
+
+\section*{Step 1: Word Embedding}
+Each word is converted into a vector. For the word ``cat'':
+\[
+\text{Embedding for ``cat''} = \begin{bmatrix} 0.4 \\ 0.5 \\ 0.6 \end{bmatrix}
+\]
+
+\section*{Step 2: Linear Projections}
+The word embedding is transformed into Query, Key, and Value vectors:
+\[
+Q_{\text{cat}} = W_Q \cdot \begin{bmatrix} 0.4 \\ 0.5 \\ 0.6 \end{bmatrix} = \begin{bmatrix} 0.7 \\ 0.8 \\ 0.9 \end{bmatrix}
+\]
+\[
+K_{\text{cat}} = W_K \cdot \begin{bmatrix} 0.4 \\ 0.5 \\ 0.6 \end{bmatrix} = \begin{bmatrix} 0.6 \\ 0.7 \\ 0.5 \end{bmatrix}
+\]
+\[
+V_{\text{cat}} = W_V \cdot \begin{bmatrix} 0.4 \\ 0.5 \\ 0.6 \end{bmatrix} = \begin{bmatrix} 0.3 \\ 0.4 \\ 0.7 \end{bmatrix}
+\]
+
+\section*{Step 3: Attention Scores}
+Compute attention scores using the dot product of \(Q_{\text{cat}}\) with the Keys of other words:
+\[
+\begin{aligned}
+Q_{\text{cat}} \cdot K_{\text{the}} & = 0.7 \times 0.1 + 0.8 \times 0.2 + 0.9 \times 0.3 = 1.13 \\
+Q_{\text{cat}} \cdot K_{\text{cat}} & = 0.7 \times 0.6 + 0.8 \times 0.7 + 0.9 \times 0.5 = 1.43 \\
+Q_{\text{cat}} \cdot K_{\text{sat}} & = 0.7 \times 0.4 + 0.8 \times 0.2 + 0.9 \times 0.6 = 0.98 \\
+Q_{\text{cat}} \cdot K_{\text{on}} & = 0.7 \times 0.3 + 0.8 \times 0.4 + 0.9 \times 0.1 = 0.62 \\
+Q_{\text{cat}} \cdot K_{\text{mat}} & = 0.7 \times 0.2 + 0.8 \times 0.5 + 0.9 \times 0.2 = 0.72 \\
+\end{aligned}
+\]
+
+\section*{Step 4: Softmax}
+Applying the softmax function to normalize scores:
+\[
+\begin{aligned}
+\text{Attention to ``The''} & = 0.25 \\
+\text{Attention to ``cat''} & = 0.35 \\
+\text{Attention to ``sat''} & = 0.2 \\
+\text{Attention to ``on''} & = 0.1 \\
+\text{Attention to ``mat''} & = 0.1 \\
+\end{aligned}
+\]
+
+\section*{Step 5: Weighted Sum of Values}
+The final representation of ``cat'' is calculated as:
+\[
+\begin{aligned}
+\text{Weighted Value} & = 0.25 \cdot V_{\text{the}} + 0.35 \cdot V_{\text{cat}} + 0.2 \cdot V_{\text{sat}} + 0.1 \cdot V_{\text{on}} + 0.1 \cdot V_{\text{mat}} \\
+& = 0.25 \cdot \begin{bmatrix} 0.1 \\ 0.2 \\ 0.3 \end{bmatrix} + 0.35 \cdot \begin{bmatrix} 0.3 \\ 0.4 \\ 0.7 \end{bmatrix} + 0.2 \cdot \begin{bmatrix} 0.5 \\ 0.6 \\ 0.1 \end{bmatrix} + 0.1 \cdot \begin{bmatrix} 0.2 \\ 0.3 \\ 0.4 \end{bmatrix} + 0.1 \cdot \begin{bmatrix} 0.6 \\ 0.2 \\ 0.5 \end{bmatrix} \\
+& = \begin{bmatrix} 0.025 \\ 0.05 \\ 0.075 \end{bmatrix} + \begin{bmatrix} 0.105 \\ 0.14 \\ 0.245 \end{bmatrix} + \begin{bmatrix} 0.1 \\ 0.12 \\ 0.02 \end{bmatrix} + \begin{bmatrix} 0.02 \\ 0.03 \\ 0.04 \end{bmatrix} + \begin{bmatrix} 0.06 \\ 0.02 \\ 0.05 \end{bmatrix} \\
+& = \begin{bmatrix} 0.31 \\ 0.36 \\ 0.43 \end{bmatrix}
+\end{aligned}
+\]
+
+
+
+\section*{Information Selection, Transformation, and Adaptability with \( W_V \)}
+
+Let's walk through how the \textbf{Value weight matrix} \( W_V \) works using the word \textbf{"cat"} in the sentence \textit{"The cat sat on the mat."}
+
+\subsection*{1. Information Selection Using \( W_V \)}
+
+The original word embedding of "cat" captures multiple aspects of the word’s meaning, such as:
+\begin{itemize}
+    \item \textbf{Semantic Information}: That "cat" is an animal.
+    \item \textbf{Grammatical Information}: That "cat" is a noun (subject).
+    \item \textbf{Contextual Information}: The relationship of "cat" to surrounding words, such as "sat."
+\end{itemize}
+
+The Value weight matrix \( W_V \) learns to \textit{select} the parts of this embedding that are most relevant for attention. For instance, in the sentence "The cat sat on the mat," \( W_V \) might prioritize the \textbf{grammatical role} and \textbf{contextual information}, downplaying the fact that "cat" is an animal.
+
+\subsection*{2. Transformation Using \( W_V \)}
+
+\( W_V \) applies a linear transformation to the word embedding of "cat." If the original embedding is:
+
+\[
+\text{Embedding for "cat"} = \begin{bmatrix} 0.4 \\ 0.5 \\ 0.6 \\ 0.7 \\ 0.8 \\ 0.9 \end{bmatrix}
+\]
+
+and \( W_V \) has learned weights as a matrix of shape \( 512 \times 64 \), we get the \textbf{Value vector} for "cat" as:
+
+\[
+V_{\text{cat}} = W_V \cdot \text{Embedding for "cat"} = \begin{bmatrix} 0.2 \\ 0.6 \\ 0.1 \\ 0.4 \end{bmatrix}
+\]
+
+Here, the Value vector highlights important dimensions. For example, \textbf{dimension 2} (0.6) might represent the \textbf{subjecthood} of "cat," while other dimensions encode different contextual relationships.
+
+\subsection*{3. Adaptability of \( W_V \) After Training}
+
+The real power of \( W_V \) comes from its adaptability. During training, the transformer model sees many sentences and, through backpropagation, learns which parts of the word embeddings are most important for attention.
+
+\subsubsection*{Example: Training for "cat"}
+In a sentence like \textit{"The cat sat on the mat,"} after much training, \( W_V \) learns that the grammatical role of "cat" as the \textbf{subject} is important for predicting the verb ("sat"). Therefore, it emphasizes the \textbf{subjecthood} dimension of the word embedding. If "cat" were to appear in different contexts (e.g., "The cat chased the mouse"), the Value vector would adapt to highlight other important relationships, such as "cat" performing the action.
+
+\subsection*{How Does the Transformer Know What to Do?}
+
+The transformer learns through \textbf{backpropagation}, where the model's errors are used to adjust the weights in \( W_V \), gradually refining it based on patterns observed during training.
+
+\subsection*{4. Mathematical Summary}
+The Value vector \( V_{\text{cat}} \) is computed as:
+
+\[
+V_{\text{cat}} = W_V \cdot \text{Embedding}_{\text{cat}}
+\]
+
+where \( W_V \in \mathbb{R}^{d_{\text{model}} \times d_v} \). The dimensions of \( V_{\text{cat}} \) reflect the selection of information most relevant for the attention mechanism.
+
+\subsection*{Conclusion}
+
+- \textbf{Information Selection}: \( W_V \) selects important parts of the word embedding.
+- \textbf{Transformation}: \( W_V \) transforms the embedding into a Value vector suitable for attention.
+- \textbf{Adaptability}: \( W_V \) adapts and improves through training, learning to emphasize information that enhances model performance.
+  
+After training, \( W_V \) knows how to extract the most useful information from the word embedding, making the attention mechanism more effective.
+
+
+
+\end{document}
